@@ -1,67 +1,86 @@
-<h1 align="center">Hi 👋, I'm LucaNL</h1>
-<h3 align="center">I'am a mainly FiveM Developer</h3>
+# LD CarWipe
 
-- 🔭 I’m currently working on [CarWipe](https://github.com/LucaNL/CarWipe-FiveM/)
+**Free, automatic vehicle cleanup for FiveM.** Removes abandoned vehicles on a schedule, warns players first, and never touches a vehicle someone is sitting in. Server-side only: nothing is added to your players' game.
 
-- 📫 How to reach me **LucaNL#2230** on discord
+Standalone. Works with ESX, QBCore, Qbox or no framework at all.
 
-<h3 align="left">Languages and Tools:</h3>
-<p align="left"> <a href="https://www.w3schools.com/css/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/css3/css3-original-wordmark.svg" alt="css3" width="40" height="40"/> </a> <a href="https://www.w3.org/html/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original-wordmark.svg" alt="html5" width="40" height="40"/> </a> <a href="https://www.java.com" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg" alt="java" width="40" height="40"/> </a> <a href="https://www.php.net" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/php/php-original.svg" alt="php" width="40" height="40"/> </a> <a href="https://www.lua.org" target="_blank" rel="noreferrer"> <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Lua-Logo.svg/1024px-Lua-Logo.svg.png" alt="lua" width="40" height="40"/> </a> 
-</p>
+## Features
 
+- **Schedule your way:** every X minutes, at fixed times (`06:00`, `18:00`), or both.
+- **Countdown with warnings** (5 min, 1 min, 30 s, 10 s by default) through the notifications your server already uses: ox_lib, ESX, QBCore/Qbox or chat, detected automatically. Or plug in your own.
+- **Safe by design:**
+  - a vehicle with a player in **any** seat is never removed (planes with passengers too);
+  - cars on an occupied flatbed and trailers behind an occupied truck stay;
+  - every vehicle is checked again right before it is removed.
+- **Smart filters:** only damaged vehicles, keep vehicles near players, keep NPC traffic, keep locked vehicles, keep **player-owned** vehicles (oxmysql), protected models, vehicle types (trains by default) and zones.
+- **No hitches:** vehicles are removed in small batches, spread over time.
+- **Plays nice with txAdmin:** an automatic wipe right before a scheduled restart is skipped.
+- **`carwipe preview`** shows what a wipe *would* remove, without removing anything. Handy while you tune the filters.
+- **For developers:** exports, events and a state bag to protect vehicles from your own scripts (e.g. vehicles for sale).
+- Optional Discord webhook log, update check, 8 languages (en, nl, de, fr, es, pt, pl, tr).
 
-**Hello,**
+## Install
 
-I myself was always looking for a good working script for a carwipe every hour for example, but never really could find something good, and something that actually did it right. So I made my own version of a carwipe script.
+1. Download the latest release and put the `ld_carwipe` folder in your `resources` folder.
+2. Add to `server.cfg`:
+   ```cfg
+   ensure ld_carwipe
+   add_ace group.admin command.carwipe allow
+   ```
+3. Restart the server. That's it: every hour, empty vehicles are removed after a 5 minute countdown.
 
-# CarWipe-FiveM
-A script that allows you to run a carwipe every so often (hours/minutes), this will remove all cars that no one is in to prevent lag. This script does not cause any performance loss.
+Needs OneSync (on by default on every modern server). Tune everything in `config.lua`.
 
-### Features:
+## Command
 
-- Change time for carwipe with cron:runAt in the server.lua
-- Notifications when a carwipe is upcoming and done in config
-- Config the 10ms delay x vehicle to delete
-- Multiple delete functions so the vehicle always goes away
-- A command to manually start a carwipe if you like
-- Delete & Normal destroyed vehicle's
-- A option to use ESX or not
-- Not deleting of someone is driveing the vehicle
-- A option to only carwipe broken vehicles [PREVIEW v1.1.1](https://youtu.be/WGoHoXCuaVE)
+| Command | What it does |
+|---|---|
+| `carwipe` | Start a wipe with the default countdown (`Config.ManualCountdown`, 60 s) |
+| `carwipe <seconds>` | Start a wipe with your own countdown |
+| `carwipe now` | Wipe right away |
+| `carwipe cancel` | Cancel the running countdown |
+| `carwipe preview` | Count what would be removed, remove nothing |
+| `carwipe status` | Next automatic wipe and the last result |
 
-  _This script has a version check, new versions will be released regularly, so you can see it right at the start of the server._
-  
-# Download and preview
-[FiveM Post](https://forum.cfx.re/t/release-free-carwipe-fivem/4839898)
+Works from the server console, and for players with the `command.carwipe` ACE.
 
-[PREVIEW v1.1.0](https://youtu.be/58E7WdJvPlQ)
+## For developers
 
-[DOWNLOAD](https://github.com/LucaNL/CarWipe-FiveM/archive/refs/heads/main.zip) 
+```lua
+-- protect one vehicle (entity or network id), e.g. a car that is for sale
+exports.ld_carwipe:protectVehicle(vehicle)          -- protect
+exports.ld_carwipe:protectVehicle(vehicle, false)   -- stop protecting
+-- or with the state bag, from any resource:
+Entity(vehicle).state:set('ldCarwipeProtected', true, true)
 
-### Requirements
-
-- [cron](https://github.com/esx-framework/cron/archive/refs/heads/master.zip) - For the automatic carwipe's every hour
-
-### How to install
-1. Download the recource
-2. Change the config in config.lua and take a look at the server.lua for adjustments
-3. Rename te script to: ```CarWipe```
-4. Add this to your server.cfg:
+exports.ld_carwipe:startWipe(60)      -- countdown in seconds, returns true | false, reason
+exports.ld_carwipe:cancelWipe()       -- true when a countdown was cancelled
+exports.ld_carwipe:getStatus()        -- { running, countdown, nextAuto, last }
+exports.ld_carwipe:previewWipe()      -- { remove, total, kept = { reason = count } } (call from a thread)
 ```
-ensure CarWipe
-```
-5. Enjoy the script :D
 
-# Changelog
-**Changelog v1.1.1** [PREVIEW v1.1.1](https://youtu.be/WGoHoXCuaVE)
-```
-  A option to only carwipe broken vehicles
-```
-  
-**Changelog v1.1.0** [PREVIEW v1.1.0](https://youtu.be/58E7WdJvPlQ)
-```
-  Fixed some delay
-  Made the config better
-  Esx and not working (need to change the config)
-  Can alerts set on/off
-```
+Server events:
+
+| Event | When | Data |
+|---|---|---|
+| `ld_carwipe:countdown` | every warning | seconds left |
+| `ld_carwipe:beforeWipe` | just before the wipe (`Config.Delete.BeforeWipeDelay` ms) | `{ reason, by }` |
+| `ld_carwipe:afterWipe` | after the wipe | `{ removed, kept, total, ms, reason, by }` |
+| `ld_carwipe:cancelled` | countdown cancelled | who cancelled |
+
+Garage script? Listen to `ld_carwipe:beforeWipe` to store vehicles first, or use `Config.Filter.SkipOwned`.
+
+## Support
+
+Questions or ideas: open an issue, or join the LD Scripts Discord: https://discord.ldscripts.com
+
+## More from LD Scripts
+
+- **LD Queue**: a reliable, fair connection queue with priority, restart protection and a live queue card.
+- **LD Refunds**: refunds and compensation for players, with a Discord bot and web dashboard.
+
+See https://store.ldscripts.com
+
+## License
+
+MIT. Free to use and change on your server.
